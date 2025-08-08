@@ -1,9 +1,20 @@
 [theme]
 base = "light"
-primaryColor = "#2146C7"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f6f8ff"
-textColor = "#111827"
+primaryColor = "#2146C7"               # deep blue for buttons & highlights
+backgroundColor = "#ffffff"            # white page background
+secondaryBackgroundColor = "#f6f8ff"   # light blue/gray sidebar
+textColor = "#111827"                   # near-black text
+font = "sans serif"                     # clean, modern font
 
 [client]
-showSidebarNavigation = false
+showSidebarNavigation = false           # hides built-in nav
+
+[server]
+headless = true                         # ensures headless mode in cloud
+enableXsrfProtection = true
+maxUploadSize = 200                     # optional: increase upload size in MB
+
+[page]
+title = "Jerry Moran News Tracker"      # browser tab title
+favicon = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Jerry_Moran_117th_Congress.jpg/240px-Jerry_Moran_117th_Congress.jpg"  # small tab icon
+layout = "wide"                         # use wide screen layout
