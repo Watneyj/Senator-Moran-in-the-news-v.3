@@ -175,20 +175,18 @@ a { text-decoration: underline; }
 """, unsafe_allow_html=True)
 
 # --- HERO HEADER (image + title) ---
-hero_col1, hero_col2 = st.columns([1, 4], vertical_alignment="center")
+hero_col1, hero_col2 = st.columns([1, 4])  # remove vertical_alignment to be safe
 with hero_col1:
     # Prefer local asset; fallback to a URL if you don't have the file yet
     try:
-        st.image("assets/jerry-moran.jpg", caption=None, use_container_width=True)
+        st.image("assets/jerry-moran.jpg", caption=None, use_column_width=True)
     except Exception:
-        st.image("https://via.placeholder.com/300x300?text=Jerry+Moran", use_container_width=True)
+        st.image("https://via.placeholder.com/300x300?text=Jerry+Moran", use_column_width=True)
 
 with hero_col2:
     st.markdown('<h1 class="hero">Jerry Moran — News Tracker</h1>', unsafe_allow_html=True)
     st.markdown('<p class="sub">Live Google News RSS search with smart deduping, Kansas-outlet highlighting, and one-click DOCX export.</p>', unsafe_allow_html=True)
     st.markdown('<span class="badge">Google News</span><span class="badge">Feedparser</span><span class="badge">DOCX Export</span>', unsafe_allow_html=True)
-
-st.markdown('<hr class="soft" />', unsafe_allow_html=True)
 
 # --- SIDEBAR CONTROLS ---
 with st.sidebar:
@@ -230,8 +228,7 @@ if run_search:
         "⬇️ Download Word Document",
         data=bio,
         file_name=filename,
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        use_container_width=True
-    )
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
 else:
     st.info("Set your search terms and click **Run Search** in the left sidebar.")
