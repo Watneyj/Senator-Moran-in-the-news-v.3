@@ -1,20 +1,10 @@
-# --- bootstrap: ensure pygooglenews is available without its legacy deps ---
-import sys, subprocess
-def _pip(*args):
-    subprocess.check_call([sys.executable, "-m", "pip", *args])
-
-try:
-    import pygooglenews  # noqa: F401
-except Exception:
-    _pip("install", "pygooglenews==0.1.2", "--no-deps")
-# ---------------------------------------------------------------------------
-
 import re
 from datetime import datetime
 from io import BytesIO
+from urllib.parse import quote_plus
 
 import streamlit as st
-from pygooglenews import GoogleNews
+import feedparser
 
 from docx import Document
 from docx.shared import Pt
@@ -39,6 +29,50 @@ KANSAS_OUTLETS = [
 ]
 
 EXCLUDE_SOURCES_CONTAINS = ['.gov', 'Quiver Quantitative', 'MSN', 'Twin States News']
+
+# -----------------------------
+# Google News RSS helper
+# -----------------------------
+def google_news_rss(term: str, when: str = "1d", lang="en-US", country="US"):
+    """
+    Build a Google News RSS query.
+    - 'when' uses the Google News query operator (e.g., when:1d, when:7d).
+    """
+    query = f"{term} when:{when}"
+    q = quote_plus(query)
+    # hl=en-US, gl=US, ceid=US:en controls locale
+    return f"https://news.google.com/rss/search?q={q}&hl={lang}&gl={country}&ceid={country}:en"
+
+def fetch_entries(search_terms, when="1d"):
+    """Fetch and de-duplicate entries across search terms using Google News RSS + feedparser."""
+    all_entries, seen_links = [], set()
+    for term in search_terms:
+        url = google_news_rss(term, when=when)
+        feed = feedparser.parse(url)
+        for e in feed.entries:
+            link = e.get("link")
+            if not link or link in seen_links:
+                continue
+            seen_links.add(link)
+
+            # Try to read the source/outlet
+            media = None
+            # feedparser commonly exposes source.title
+            src = getattr(e, "source", None)
+            if src and isinstance(src, dict):
+                media = src.get("title")
+
+            # Fallbacks
+            if not media:
+                media = e.get("author") or "Unknown"
+
+            title = e.get("title", "").strip()
+            all_entries.append({
+                "title": title,
+                "link": link,
+                "source": {"title": media}
+            })
+    return all_entries
 
 # -----------------------------
 # Helpers
@@ -74,11 +108,12 @@ def add_hyperlink(paragraph, url, text):
 def process_entries_with_duplicates(all_entries):
     title_groups = {}
     for entry in all_entries:
-        media = entry['source']['title']
+        media = entry['source']['title'] or "Unknown"
+
         if any(x in media for x in EXCLUDE_SOURCES_CONTAINS):
             continue
 
-        raw_title = re.sub(rf" - {re.escape(media)}$", "", entry['title'])
+        raw_title = re.sub(rf" - {re.escape(media)}$", "", entry['title'] or "")
         title = clean_text(raw_title)
         normalized_title = normalize_title_for_duplicate_detection(title)
 
@@ -88,14 +123,15 @@ def process_entries_with_duplicates(all_entries):
 
     processed = []
     for group in title_groups.values():
-        if not group: continue
+        if not group: 
+            continue
         primary, duplicates = group[0], group[1:]
         media_string = primary['media']
         if duplicates:
             dup_outlets = [d['media'] for d in duplicates]
             media_string += f" (also ran in {', '.join(dup_outlets[:-1])} and {dup_outlets[-1]})" if len(dup_outlets) > 1 else f" (also ran in {dup_outlets[0]})"
         is_kansas = any(k in primary['media'] for k in KANSAS_OUTLETS)
-        processed.append({'title': primary['title'], 'media_string': media_string, 'link': primary['link'], 'is_kansas': is_kansas})
+        processed.append({'title': primary['title'], 'media_string': media_string, 'link': entry['link'], 'is_kansas': is_kansas})
     return processed
 
 def build_docx_bytes(processed_entries):
@@ -122,28 +158,20 @@ def build_docx_bytes(processed_entries):
 # Streamlit UI
 # -----------------------------
 st.title("Jerry Moran News Search")
-st.caption("Powered by Google News via pygooglenews")
+st.caption("Powered by Google News RSS")
 
 terms_text = st.text_area("Search terms (comma-separated):", value=", ".join(DEFAULT_TERMS), height=90)
-when_choice = st.selectbox("Time window", ["1d", "3d", "7d", "14d", "30d"], index=0, help="pygooglenews `when` parameter")
+when_choice = st.selectbox("Time window", ["1d", "3d", "7d", "14d", "30d"], index=0, help="Google News query operator `when:`")
 
 if st.button("Search"):
     search_terms = [t.strip() for t in terms_text.split(",") if t.strip()]
-    gn = GoogleNews(lang='en', country='US')
-    all_entries, seen_links = [], set()
 
     with st.spinner("Searching Google News…"):
-        for term in search_terms:
-            try:
-                results = gn.search(term, when=when_choice)
-                for e in results.get('entries', []):
-                    if e['link'] not in seen_links:
-                        all_entries.append(e); seen_links.add(e['link'])
-            except Exception as ex:
-                st.warning(f"Error for '{term}': {ex}")
+        all_entries = fetch_entries(search_terms, when=when_choice)
 
-    st.write(f"**Found {len(all_entries)} unique articles**")
+    st.write(f"**Found {len(all_entries)} unique articles (pre-dedupe)**")
     processed_entries = process_entries_with_duplicates(all_entries)
+    st.write(f"**After dedupe: {len(processed_entries)}**")
 
     md_lines = ["# Jerry Moran News", ""]
     for i, entry in enumerate(processed_entries, 1):
