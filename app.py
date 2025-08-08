@@ -131,7 +131,7 @@ def process_entries_with_duplicates(all_entries):
             dup_outlets = [d['media'] for d in duplicates]
             media_string += f" (also ran in {', '.join(dup_outlets[:-1])} and {dup_outlets[-1]})" if len(dup_outlets) > 1 else f" (also ran in {dup_outlets[0]})"
         is_kansas = any(k in primary['media'] for k in KANSAS_OUTLETS)
-        processed.append({'title': primary['title'], 'media_string': media_string, 'link': entry['link'], 'is_kansas': is_kansas})
+        processed.append({'title': primary['title'], 'media_string': media_string, 'link': primary['link'], 'is_kansas': is_kansas})
     return processed
 
 def build_docx_bytes(processed_entries):
