@@ -1,3 +1,14 @@
+# bootstrap: make sure pygooglenews is present, but don't pull its old deps
+import sys, subprocess
+def _pip(*args):
+    subprocess.check_call([sys.executable, "-m", "pip", *args])
+
+try:
+    import pygooglenews  # noqa
+except Exception:
+    _pip("install", "pygooglenews==0.1.2", "--no-deps")
+
+from pygooglenews import GoogleNews
 # -*- coding: utf-8 -*-
 """Untitled5.ipynb
 
