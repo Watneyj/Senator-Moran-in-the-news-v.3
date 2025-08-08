@@ -174,23 +174,32 @@ a { text-decoration: underline; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- HERO HEADER (image + title) ---
-hero_col1, hero_col2 = st.columns([1, 4])  # remove vertical_alignment to be safe
-with hero_col1:
-    # Prefer local asset; fallback to a URL if you don't have the file yet
-    try:
-        st.image("assets/jerry-moran.jpg", caption=None, use_column_width=True)
-    except Exception:
-        st.image("https://via.placeholder.com/300x300?text=Jerry+Moran", use_column_width=True)
+# --- PAGE HEADER ---
+st.set_page_config(
+    page_title="Jerry Moran News Search",
+    page_icon="📰",
+    layout="wide",
+)
 
-with hero_col2:
-    st.markdown('<h1 class="hero">Jerry Moran — News Tracker</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub">Live Google News RSS search with smart deduping, Kansas-outlet highlighting, and one-click DOCX export.</p>', unsafe_allow_html=True)
-    st.markdown('<span class="badge">Google News</span><span class="badge">Feedparser</span><span class="badge">DOCX Export</span>', unsafe_allow_html=True)
+# Full-width centered image at top
+st.image(
+    "assets/jerry-moran.jpg",  # replace with your local file path
+    use_column_width=True
+)
 
-# --- SIDEBAR CONTROLS ---
-with st.sidebar:
-    st.header("Search Settings")
+st.markdown(
+    "<h1 style='text-align:center;'>Jerry Moran — News Tracker</h1>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<p style='text-align:center;'>Live Google News RSS search with smart deduping, Kansas-outlet highlighting, and one-click DOCX export.</p>",
+    unsafe_allow_html=True
+)
+st.markdown("<hr>", unsafe_allow_html=True)
+
+# --- SEARCH CONTROLS CENTERED ---
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
     terms_text = st.text_area(
         "Search terms (comma-separated)",
         value=", ".join(DEFAULT_TERMS),
@@ -204,31 +213,35 @@ with st.sidebar:
     )
     run_search = st.button("🔎 Run Search", type="primary", use_container_width=True)
 
-# --- MAIN ACTION ---
+# --- RESULTS ---
 if run_search:
     search_terms = [t.strip() for t in terms_text.split(",") if t.strip()]
     with st.spinner("Searching Google News…"):
-        # if you're using the RSS version, call `fetch_entries`; if using pygooglenews, keep your gn.search path.
         all_entries = fetch_entries(search_terms, when=when_choice)
 
-    st.success(f"Found {len(all_entries)} items before dedupe · {datetime.now().strftime('%b %d, %Y %I:%M %p')}")
     processed_entries = process_entries_with_duplicates(all_entries)
-    st.write(f"**After dedupe:** {len(processed_entries)}")
 
-    # Render the list
-    md_lines = ["# Jerry Moran News", ""]
-    for i, entry in enumerate(processed_entries, 1):
-        star = "*" if entry['is_kansas'] else ""
-        md_lines.append(f"{i}. {star}{entry['media_string']}: [{entry['title']}]({entry['link']})")
-    st.markdown("\n".join(md_lines))
+    st.markdown(
+        f"<p style='text-align:center;'><strong>Found {len(all_entries)} items before dedupe — After dedupe: {len(processed_entries)}</strong></p>",
+        unsafe_allow_html=True
+    )
 
-    # Download DOCX
-    filename, bio = build_docx_bytes(processed_entries)
-    st.download_button(
-        "⬇️ Download Word Document",
-        data=bio,
-        file_name=filename,
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-)
+    # Center results
+    col1, col2, col3 = st.columns([0.5, 3, 0.5])
+    with col2:
+        md_lines = []
+        for i, entry in enumerate(processed_entries, 1):
+            star = "*" if entry['is_kansas'] else ""
+            md_lines.append(f"{i}. {star}{entry['media_string']}: [{entry['title']}]({entry['link']})")
+        st.markdown("\n".join(md_lines))
+
+        # Download DOCX
+        filename, bio = build_docx_bytes(processed_entries)
+        st.download_button(
+            "⬇️ Download Word Document",
+            data=bio,
+            file_name=filename,
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
 else:
-    st.info("Set your search terms and click **Run Search** in the left sidebar.")
+    st.info("Enter search terms above and click **Run Search**.")
