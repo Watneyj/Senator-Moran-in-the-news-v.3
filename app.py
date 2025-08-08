@@ -154,30 +154,84 @@ def build_docx_bytes(processed_entries):
     bio = BytesIO(); doc.save(bio); bio.seek(0)
     return filename, bio
 
-# -----------------------------
-# Streamlit UI
-# -----------------------------
-st.title("Jerry Moran News Search")
-st.caption("Powered by Google News RSS")
+# --- page config & light CSS ---
+st.set_page_config(
+    page_title="Jerry Moran News Search",
+    page_icon="📰",
+    layout="wide",
+)
 
-terms_text = st.text_area("Search terms (comma-separated):", value=", ".join(DEFAULT_TERMS), height=90)
-when_choice = st.selectbox("Time window", ["1d", "3d", "7d", "14d", "30d"], index=0, help="Google News query operator `when:`")
+st.markdown("""
+<style>
+/* tighten list spacing and make links pop a bit */
+.block-container { padding-top: 1.5rem; }
+h1.hero { font-size: 2rem; margin: 0 0 .25rem 0; }
+p.sub { color:#374151; margin:0 0 1rem 0; }
+.badge { display:inline-block; padding:.15rem .5rem; font-size:.75rem; border-radius:999px; background:#e8ecff; color:#1f3a8a; margin-right:.4rem; }
+hr.soft { border:none; border-top:1px solid #e5e7eb; margin:1rem 0 1.25rem 0; }
+ol li { margin-bottom:.35rem; }
+a { text-decoration: underline; }
+</style>
+""", unsafe_allow_html=True)
 
-if st.button("Search"):
+# --- HERO HEADER (image + title) ---
+hero_col1, hero_col2 = st.columns([1, 4], vertical_alignment="center")
+with hero_col1:
+    # Prefer local asset; fallback to a URL if you don't have the file yet
+    try:
+        st.image("assets/jerry-moran.jpg", caption=None, use_container_width=True)
+    except Exception:
+        st.image("https://via.placeholder.com/300x300?text=Jerry+Moran", use_container_width=True)
+
+with hero_col2:
+    st.markdown('<h1 class="hero">Jerry Moran — News Tracker</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="sub">Live Google News RSS search with smart deduping, Kansas-outlet highlighting, and one-click DOCX export.</p>', unsafe_allow_html=True)
+    st.markdown('<span class="badge">Google News</span><span class="badge">Feedparser</span><span class="badge">DOCX Export</span>', unsafe_allow_html=True)
+
+st.markdown('<hr class="soft" />', unsafe_allow_html=True)
+
+# --- SIDEBAR CONTROLS ---
+with st.sidebar:
+    st.header("Search Settings")
+    terms_text = st.text_area(
+        "Search terms (comma-separated)",
+        value=", ".join(DEFAULT_TERMS),
+        height=110
+    )
+    when_choice = st.selectbox(
+        "Time window",
+        options=["1d", "3d", "7d", "14d", "30d"],
+        index=0,
+        help="Google News query operator `when:`"
+    )
+    run_search = st.button("🔎 Run Search", type="primary", use_container_width=True)
+
+# --- MAIN ACTION ---
+if run_search:
     search_terms = [t.strip() for t in terms_text.split(",") if t.strip()]
-
     with st.spinner("Searching Google News…"):
+        # if you're using the RSS version, call `fetch_entries`; if using pygooglenews, keep your gn.search path.
         all_entries = fetch_entries(search_terms, when=when_choice)
 
-    st.write(f"**Found {len(all_entries)} unique articles (pre-dedupe)**")
+    st.success(f"Found {len(all_entries)} items before dedupe · {datetime.now().strftime('%b %d, %Y %I:%M %p')}")
     processed_entries = process_entries_with_duplicates(all_entries)
-    st.write(f"**After dedupe: {len(processed_entries)}**")
+    st.write(f"**After dedupe:** {len(processed_entries)}")
 
+    # Render the list
     md_lines = ["# Jerry Moran News", ""]
     for i, entry in enumerate(processed_entries, 1):
         star = "*" if entry['is_kansas'] else ""
         md_lines.append(f"{i}. {star}{entry['media_string']}: [{entry['title']}]({entry['link']})")
     st.markdown("\n".join(md_lines))
 
+    # Download DOCX
     filename, bio = build_docx_bytes(processed_entries)
-    st.download_button("Download Word Document", data=bio, file_name=filename, mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    st.download_button(
+        "⬇️ Download Word Document",
+        data=bio,
+        file_name=filename,
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        use_container_width=True
+    )
+else:
+    st.info("Set your search terms and click **Run Search** in the left sidebar.")
