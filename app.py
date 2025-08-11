@@ -212,7 +212,10 @@ col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     terms_text = st.text_area(
         "Search terms (comma-separated)",
-        value=", ".join(DEFAULT_TERMS),
+        value=", ".join([
+            "Jerry Moran", "Senator Jerry Moran", "Senator Moran",
+            "Sen. Moran", "Sen. Jerry Moran", "Sens. Moran", "Sens. Jerry Moran"
+        ]),
         height=110,
     )
     exclude_text = st.text_area(
@@ -267,4 +270,3 @@ if run_search:
         )
 else:
     st.info("Enter search terms above and click **Run Search**.")
-
