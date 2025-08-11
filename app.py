@@ -129,7 +129,10 @@ def add_hyperlink(paragraph, url, text):
     return hyperlink
 
 
-def process_entries_with_duplicates(all_entries):
+def process_entries_with_duplicates(all_entries, kansas_outlets=None):
+    if kansas_outlets is None:
+        kansas_outlets = KANSAS_OUTLETS
+
     title_groups = {}
     for entry in all_entries:
         media = (entry['source']['title'] or "Unknown")
@@ -159,11 +162,14 @@ def process_entries_with_duplicates(all_entries):
                 media_string += f" (also ran in {dup_outlets[0]})"
             else:
                 media_string += f" (also ran in {', '.join(dup_outlets[:-1])} and {dup_outlets[-1]})"
-        is_kansas = any(k in primary['media'] for k in KANSAS_OUTLETS)
+
+        # Use the *editable* list
+        is_kansas = any(k.strip() and k.strip() in primary['media'] for k in kansas_outlets)
+
         processed.append({
             'title': primary['title'],
             'media_string': media_string,
-            'link': primary['link'],  # IMPORTANT: use primary, not stale `entry`
+            'link': primary['link'],
             'is_kansas': is_kansas,
         })
     return processed
@@ -228,11 +234,6 @@ with col2:
         value=", ".join(KANSAS_OUTLETS),
         height=80,
     )
-    kansas_media_text = st.text_area(
-        "Kansas media outlets (comma-separated)",
-        value=", ".join(KANSAS_OUTLETS),
-        height=90,
-    )
     when_choice = st.selectbox(
         "Time window",
         options=["1d", "3d", "7d", "14d", "30d"],
@@ -247,22 +248,18 @@ with col2:
 if run_search:
     search_terms = [t.strip() for t in terms_text.split(",") if t.strip()]
     exclude_terms = [e.strip() for e in exclude_text.split(",") if e.strip()]
-kansas_media = [k.strip() for k in kansas_media_text.split(",") if k.strip()]
+    kansas_media = [k.strip() for k in kansas_media_text.split(",") if k.strip()]
 
-# Append negative keywords to each search term
-if exclude_terms:
-    negatives = " ".join([f"-{word}" for word in exclude_terms])
-    search_terms = [term + " " + negatives for term in search_terms]
+    # Append negative keywords to each search term
+    if exclude_terms:
+        negatives = " ".join([f"-{word}" for word in exclude_terms])
+        search_terms = [term + " " + negatives for term in search_terms]
 
-with st.spinner("Searching Google News…"):
-    all_entries = fetch_entries(search_terms, when=when_choice)
+    with st.spinner("Searching Google News…"):
+        all_entries = fetch_entries(search_terms, when=when_choice)
 
-processed_entries = process_entries_with_duplicates(all_entries)
-
-# Recompute Kansas outlet flag using the editable list
-if kansas_media:
-    for e in processed_entries:
-        e['is_kansas'] = any(k in e['media_string'] for k in kansas_media)
+    # Pass the editable Kansas list directly
+    processed_entries = process_entries_with_duplicates(all_entries, kansas_outlets=kansas_media)
 
     st.markdown(
         f"<p class='center-text'><strong>Found {len(all_entries)} items before dedupe — After dedupe: {len(processed_entries)}</strong></p>",
