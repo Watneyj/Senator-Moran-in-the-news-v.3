@@ -215,6 +215,11 @@ with col2:
         value=", ".join(DEFAULT_TERMS),
         height=110,
     )
+    exclude_text = st.text_area(
+        "Exclude these words (comma-separated)",
+        value="Allan, Anna, Terry",
+        height=60,
+    )
     when_choice = st.selectbox(
         "Time window",
         options=["1d", "3d", "7d", "14d", "30d"],
@@ -228,6 +233,13 @@ with col2:
 # -----------------------------
 if run_search:
     search_terms = [t.strip() for t in terms_text.split(",") if t.strip()]
+    exclude_terms = [e.strip() for e in exclude_text.split(",") if e.strip()]
+    
+    # Append negative keywords to each search term
+    if exclude_terms:
+        negatives = " ".join([f"-{word}" for word in exclude_terms])
+        search_terms = [term + " " + negatives for term in search_terms]
+
     with st.spinner("Searching Google News…"):
         all_entries = fetch_entries(search_terms, when=when_choice)
 
@@ -255,3 +267,4 @@ if run_search:
         )
 else:
     st.info("Enter search terms above and click **Run Search**.")
+
