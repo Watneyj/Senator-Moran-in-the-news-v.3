@@ -247,27 +247,22 @@ with col2:
 if run_search:
     search_terms = [t.strip() for t in terms_text.split(",") if t.strip()]
     exclude_terms = [e.strip() for e in exclude_text.split(",") if e.strip()]
-    kansas_media = [k.strip() for k in kansas_media_text.split(",") if k.strip()]
-    kansas_outlets = [m.strip() for m in kansas_media_text.split(",") if m.strip()]
-    
-    # Update global KANSAS_OUTLETS for this run
-    global KANSAS_OUTLETS
-    KANSAS_OUTLETS = kansas_outlets
+kansas_media = [k.strip() for k in kansas_media_text.split(",") if k.strip()]
 
-    # Append negative keywords to each search term
-    if exclude_terms:
-        negatives = " ".join([f"-{word}" for word in exclude_terms])
-        search_terms = [term + " " + negatives for term in search_terms]
+# Append negative keywords to each search term
+if exclude_terms:
+    negatives = " ".join([f"-{word}" for word in exclude_terms])
+    search_terms = [term + " " + negatives for term in search_terms]
 
-    with st.spinner("Searching Google News…"):
-        all_entries = fetch_entries(search_terms, when=when_choice)
+with st.spinner("Searching Google News…"):
+    all_entries = fetch_entries(search_terms, when=when_choice)
 
-    processed_entries = process_entries_with_duplicates(all_entries)
+processed_entries = process_entries_with_duplicates(all_entries)
 
-    # Recompute Kansas outlet flag using the editable list
-    if kansas_media:
-        for e in processed_entries:
-            e['is_kansas'] = any(k in e['media_string'] for k in kansas_media)
+# Recompute Kansas outlet flag using the editable list
+if kansas_media:
+    for e in processed_entries:
+        e['is_kansas'] = any(k in e['media_string'] for k in kansas_media)
 
     st.markdown(
         f"<p class='center-text'><strong>Found {len(all_entries)} items before dedupe — After dedupe: {len(processed_entries)}</strong></p>",
