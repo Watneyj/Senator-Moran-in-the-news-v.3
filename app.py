@@ -278,45 +278,66 @@ with col2:
     )
     run_search = st.button("🔎 Run Search")
 
-# -----------------------------
-# RESULTS (Centered column)
-# -----------------------------
-if run_search:
-    search_terms = [t.strip() for t in terms_text.split(",") if t.strip()]
-    exclude_terms = [e.strip() for e in exclude_text.split(",") if e.strip()]
-    kansas_media = [k.strip() for k in kansas_media_text.split(",") if k.strip()]
+diff --git a/app.py b/app.py
+index e4de0512e76e3c6e20d4a78f3919842d2d43a17e..3dd09a8f3d7c6f26abca0e14db90346a36c54f9e 100644
+--- a/app.py
++++ b/app.py
+@@ -280,43 +280,42 @@ with col2:
+ 
+ # -----------------------------
+ # RESULTS (Centered column)
+ # -----------------------------
+ if run_search:
+     search_terms = [t.strip() for t in terms_text.split(",") if t.strip()]
+     exclude_terms = [e.strip() for e in exclude_text.split(",") if e.strip()]
+     kansas_media = [k.strip() for k in kansas_media_text.split(",") if k.strip()]
+ 
+     # Append negative keywords to each search term
+     if exclude_terms:
+         negatives = " ".join([f"-{word}" for word in exclude_terms])
+         search_terms = [term + " " + negatives for term in search_terms]
+ 
+     with st.spinner("Searching Google News…"):
+         all_entries = fetch_entries(search_terms, when=when_choice)
+ 
+     # Pass the editable Kansas list directly
+     processed_entries = process_entries_with_duplicates(all_entries, kansas_outlets=kansas_media)
+ 
+     st.markdown(
+         f"<p class='center-text'><strong>Found {len(all_entries)} items before dedupe — After dedupe: {len(processed_entries)}</strong></p>",
+         unsafe_allow_html=True,
+     )
+ 
+-# ... inside your Streamlit results display block ...
+-c1, c2, c3 = st.columns([0.5, 3, 0.5])
+-with c2:
+-    md_lines = []
+-    for i, entry in enumerate(processed_entries, 1):
+-        md_lines.append(f"{i}. {entry['media_string']}: [{entry['title']}]({entry['link']})")
+-    st.markdown("\n".join(md_lines))
+-
+-    filename, bio = build_docx_bytes(processed_entries)
+-    st.download_button(
+-        "⬇️ Download Word Document",
+-        data=bio,
+-        file_name=filename,
+-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+-    )
++    # ... inside your Streamlit results display block ...
++    c1, c2, c3 = st.columns([0.5, 3, 0.5])
++    with c2:
++        md_lines = []
++        for i, entry in enumerate(processed_entries, 1):
++            md_lines.append(f"{i}. {entry['media_string']}: [{entry['title']}]({entry['link']})")
++        st.markdown("\n".join(md_lines))
++
++        filename, bio = build_docx_bytes(processed_entries)
++        st.download_button(
++            "⬇️ Download Word Document",
++            data=bio,
++            file_name=filename,
++            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+         )
+ else:
+     st.info("Enter search terms above and click **Run Search**.")
 
-    # Append negative keywords to each search term
-    if exclude_terms:
-        negatives = " ".join([f"-{word}" for word in exclude_terms])
-        search_terms = [term + " " + negatives for term in search_terms]
-
-    with st.spinner("Searching Google News…"):
-        all_entries = fetch_entries(search_terms, when=when_choice)
-
-    # Pass the editable Kansas list directly
-    processed_entries = process_entries_with_duplicates(all_entries, kansas_outlets=kansas_media)
-
-    st.markdown(
-        f"<p class='center-text'><strong>Found {len(all_entries)} items before dedupe — After dedupe: {len(processed_entries)}</strong></p>",
-        unsafe_allow_html=True,
-    )
-
-# ... inside your Streamlit results display block ...
-c1, c2, c3 = st.columns([0.5, 3, 0.5])
-with c2:
-    md_lines = []
-    for i, entry in enumerate(processed_entries, 1):
-        md_lines.append(f"{i}. {entry['media_string']}: [{entry['title']}]({entry['link']})")
-    st.markdown("\n".join(md_lines))
-
-    filename, bio = build_docx_bytes(processed_entries)
-    st.download_button(
-        "⬇️ Download Word Document",
-        data=bio,
-        file_name=filename,
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
-        )
-else:
-    st.info("Enter search terms above and click **Run Search**.")
