@@ -303,7 +303,7 @@ if run_search:
     )
 
     c1, c2, c3 = st.columns([0.5, 3, 0.5])
-    with c2:
+        with c2:
        # ... inside your Streamlit results display block ...
 md_lines = []
 for i, entry in enumerate(processed_entries, 1):
