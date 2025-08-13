@@ -133,31 +133,6 @@ def process_entries_with_duplicates(all_entries, kansas_outlets=None):
     if kansas_outlets is None:
         kansas_outlets = KANSAS_OUTLETS
 
-    title_groups = {}
-    for entry in all_entries:
-        media = (entry['source']['title'] or "Unknown")
-        if any(x in media for x in EXCLUDE_SOURCES_CONTAINS):
-            continue
-
-        raw_title = re.sub(rf" - {re.escape(media)}$", "", entry['title'] or "")
-        title = clean_text(raw_title)
-        normalized = normalize_title_for_duplicate_detection(title)
-
-        title_groups.setdefault(normalized, []).append({
-            'title': title,
-            'media': clean_text(media),
-            'link': entry['link'],
-            'entry': entry,
-        })
-
-    processed = []
-    for group in title_groups.values():
-        if not group:
-            continue
-def process_entries_with_duplicates(all_entries, kansas_outlets=None):
-    if kansas_outlets is None:
-        kansas_outlets = KANSAS_OUTLETS
-
     def is_kansas_outlet(media, kansas_outlets):
         return any(k.strip() and k.strip().lower() == media.lower() for k in kansas_outlets)
 
@@ -278,66 +253,44 @@ with col2:
     )
     run_search = st.button("🔎 Run Search")
 
-diff --git a/app.py b/app.py
-index e4de0512e76e3c6e20d4a78f3919842d2d43a17e..3dd09a8f3d7c6f26abca0e14db90346a36c54f9e 100644
---- a/app.py
-+++ b/app.py
-@@ -280,43 +280,42 @@ with col2:
- 
- # -----------------------------
- # RESULTS (Centered column)
- # -----------------------------
- if run_search:
-     search_terms = [t.strip() for t in terms_text.split(",") if t.strip()]
-     exclude_terms = [e.strip() for e in exclude_text.split(",") if e.strip()]
-     kansas_media = [k.strip() for k in kansas_media_text.split(",") if k.strip()]
- 
-     # Append negative keywords to each search term
-     if exclude_terms:
-         negatives = " ".join([f"-{word}" for word in exclude_terms])
-         search_terms = [term + " " + negatives for term in search_terms]
- 
-     with st.spinner("Searching Google News…"):
-         all_entries = fetch_entries(search_terms, when=when_choice)
- 
-     # Pass the editable Kansas list directly
-     processed_entries = process_entries_with_duplicates(all_entries, kansas_outlets=kansas_media)
- 
-     st.markdown(
-         f"<p class='center-text'><strong>Found {len(all_entries)} items before dedupe — After dedupe: {len(processed_entries)}</strong></p>",
-         unsafe_allow_html=True,
-     )
- 
--# ... inside your Streamlit results display block ...
--c1, c2, c3 = st.columns([0.5, 3, 0.5])
--with c2:
--    md_lines = []
--    for i, entry in enumerate(processed_entries, 1):
--        md_lines.append(f"{i}. {entry['media_string']}: [{entry['title']}]({entry['link']})")
--    st.markdown("\n".join(md_lines))
--
--    filename, bio = build_docx_bytes(processed_entries)
--    st.download_button(
--        "⬇️ Download Word Document",
--        data=bio,
--        file_name=filename,
--        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
--    )
-+    # ... inside your Streamlit results display block ...
-+    c1, c2, c3 = st.columns([0.5, 3, 0.5])
-+    with c2:
-+        md_lines = []
-+        for i, entry in enumerate(processed_entries, 1):
-+            md_lines.append(f"{i}. {entry['media_string']}: [{entry['title']}]({entry['link']})")
-+        st.markdown("\n".join(md_lines))
-+
-+        filename, bio = build_docx_bytes(processed_entries)
-+        st.download_button(
-+            "⬇️ Download Word Document",
-+            data=bio,
-+            file_name=filename,
-+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-         )
- else:
-     st.info("Enter search terms above and click **Run Search**.")
+# -----------------------------
+# RESULTS (Centered column)
+# -----------------------------
+if run_search:
+    search_terms = [t.strip() for t in terms_text.split(",") if t.strip()]
+    exclude_terms = [e.strip() for e in exclude_text.split(",") if e.strip()]
+    kansas_media = [k.strip() for k in kansas_media_text.split(",") if k.strip()]
 
+    # Append negative keywords to each search term
+    if exclude_terms:
+        negatives = " ".join([f"-{word}" for word in exclude_terms])
+        search_terms = [term + " " + negatives for term in search_terms]
+
+    with st.spinner("Searching Google News…"):
+        all_entries = fetch_entries(search_terms, when=when_choice)
+
+    # Pass the editable Kansas list directly
+    processed_entries = process_entries_with_duplicates(all_entries, kansas_outlets=kansas_media)
+
+    st.markdown(
+        f"<p class='center-text'><strong>Found {len(all_entries)} items before dedupe — After dedupe: {len(processed_entries)}</strong></p>",
+        unsafe_allow_html=True,
+    )
+
+    # Display results in centered column
+    c1, c2, c3 = st.columns([0.5, 3, 0.5])
+    with c2:
+        md_lines = []
+        for i, entry in enumerate(processed_entries, 1):
+            md_lines.append(f"{i}. {entry['media_string']}: [{entry['title']}]({entry['link']})")
+        st.markdown("\n".join(md_lines))
+
+        filename, bio = build_docx_bytes(processed_entries)
+        st.download_button(
+            "⬇️ Download Word Document",
+            data=bio,
+            file_name=filename,
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+else:
+    st.info("Enter search terms above and click **Run Search**.")
