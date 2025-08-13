@@ -218,13 +218,17 @@ def build_docx_bytes(processed_entries):
     doc.add_heading('News Articles', level=1)
 
     for entry in processed_entries:
-        prefix = '*' if entry['is_kansas'] else ''
+        # No need for extra star prefix, it's handled in media_string now
         p = doc.add_paragraph()
-        p.add_run(f"{prefix}{entry['media_string']}: ")
+        p.add_run(f"{entry['media_string']}: ")
         add_hyperlink(p, entry['link'], entry['title'])
-        url_run = p.add_run(f" [{entry['link']}]"); url_run.font.italic = True; url_run.font.size = Pt(8)
+        url_run = p.add_run(f" [{entry['link']}]")
+        url_run.font.italic = True
+        url_run.font.size = Pt(8)
 
-    bio = BytesIO(); doc.save(bio); bio.seek(0)
+    bio = BytesIO()
+    doc.save(bio)
+    bio.seek(0)
     return filename, bio
 
 # -----------------------------
@@ -300,11 +304,12 @@ if run_search:
 
     c1, c2, c3 = st.columns([0.5, 3, 0.5])
     with c2:
-        md_lines = []
-        for i, entry in enumerate(processed_entries, 1):
-            star = "*" if entry['is_kansas'] else ""
-            md_lines.append(f"{i}. {star}{entry['media_string']}: [{entry['title']}]({entry['link']})")
-        st.markdown("\n".join(md_lines))
+       # ... inside your Streamlit results display block ...
+md_lines = []
+for i, entry in enumerate(processed_entries, 1):
+    # Do NOT add a star prefix! It's already in media_string
+    md_lines.append(f"{i}. {entry['media_string']}: [{entry['title']}]({entry['link']})")
+st.markdown("\n".join(md_lines))
 
         filename, bio = build_docx_bytes(processed_entries)
         st.download_button(
