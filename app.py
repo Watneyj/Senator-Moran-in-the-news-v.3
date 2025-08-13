@@ -302,21 +302,22 @@ if run_search:
         unsafe_allow_html=True,
     )
 
-    c1, c2, c3 = st.columns([0.5, 3, 0.5])
-        with c2:
-       # ... inside your Streamlit results display block ...
-md_lines = []
-for i, entry in enumerate(processed_entries, 1):
-    # Do NOT add a star prefix! It's already in media_string
-    md_lines.append(f"{i}. {entry['media_string']}: [{entry['title']}]({entry['link']})")
-st.markdown("\n".join(md_lines))
+# ... inside your Streamlit results display block ...
+c1, c2, c3 = st.columns([0.5, 3, 0.5])
+with c2:
+    md_lines = []
+    for i, entry in enumerate(processed_entries, 1):
+        # Only use media_string; do NOT add a star prefix!
+        md_lines.append(f"{i}. {entry['media_string']}: [{entry['title']}]({entry['link']})")
+    st.markdown("\n".join(md_lines))
 
-        filename, bio = build_docx_bytes(processed_entries)
-        st.download_button(
-            "⬇️ Download Word Document",
-            data=bio,
-            file_name=filename,
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    filename, bio = build_docx_bytes(processed_entries)
+    st.download_button(
+        "⬇️ Download Word Document",
+        data=bio,
+        file_name=filename,
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
         )
 else:
     st.info("Enter search terms above and click **Run Search**.")
