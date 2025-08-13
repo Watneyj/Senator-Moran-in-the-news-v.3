@@ -307,7 +307,6 @@ c1, c2, c3 = st.columns([0.5, 3, 0.5])
 with c2:
     md_lines = []
     for i, entry in enumerate(processed_entries, 1):
-        # Only use media_string; do NOT add a star prefix!
         md_lines.append(f"{i}. {entry['media_string']}: [{entry['title']}]({entry['link']})")
     st.markdown("\n".join(md_lines))
 
@@ -316,7 +315,7 @@ with c2:
         "⬇️ Download Word Document",
         data=bio,
         file_name=filename,
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
         )
 else:
