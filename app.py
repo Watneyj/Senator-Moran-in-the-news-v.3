@@ -37,7 +37,7 @@ KANSAS_OUTLETS = [
     'KCLY Radio', 'KSN-TV', 'KWCH', 'Kansas City Star',
     'Lawrence Journal-World', 'The Garden City Telegram', 'KSNT 27 News',
     'The Hutchinson News', 'Salina Journal', 'Hays Daily News',
-    'Hays Post', 'Emporia Gazette', 'JC Post', 'WIBW', 'KRSL', 'Dodge City Daily Globe', 'DerbyInformer.com'
+    'Hays Post', 'Emporia Gazette', 'JC Post', 'WIBW', 'KRSL', 'Dodge City Daily Globe', 'DerbyInformer.com', 'KCTV'
 ]
 
 EXCLUDE_SOURCES_CONTAINS = ['.gov', 'Quiver Quantitative', 'MSN', 'Twin States News']
