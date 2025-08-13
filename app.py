@@ -155,13 +155,22 @@ def process_entries_with_duplicates(all_entries, kansas_outlets=None):
         if not group:
             continue
         primary, duplicates = group[0], group[1:]
-        media_string = primary['media']
-        if duplicates:
-            dup_outlets = [d['media'] for d in duplicates]
-            if len(dup_outlets) == 1:
-                media_string += f" (also ran in {dup_outlets[0]})"
-            else:
-                media_string += f" (also ran in {', '.join(dup_outlets[:-1])} and {dup_outlets[-1]})"
+        def is_kansas_outlet(media, kansas_outlets):
+    return any(k.strip() and k.strip().lower() == media.lower() for k in kansas_outlets)
+
+media_string = primary['media']
+if is_kansas_outlet(media_string, kansas_outlets):
+    media_string = f"*{media_string}"
+
+if duplicates:
+    def format_outlet(media):
+        return f"*{media}" if is_kansas_outlet(media, kansas_outlets) else media
+
+    dup_outlets = [format_outlet(d['media']) for d in duplicates]
+    if len(dup_outlets) == 1:
+        media_string += f" (also ran in {dup_outlets[0]})"
+    else:
+        media_string += f" (also ran in {', '.join(dup_outlets[:-1])} and {dup_outlets[-1]})"
 
         # Use the *editable* list
         is_kansas = any(k.strip() and k.strip() in primary['media'] for k in kansas_outlets)
